@@ -1,0 +1,16 @@
+- hosts: "{{ oc_hosts }}"
+  remote_user:  "{{ oci_user }}"
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: false
+
+  tasks:
+  - name: uptime
+    shell: "uptime;uname -r"
+    register: output
+
+
+  - debug:
+       msg: "{{ output.stdout }}"
+

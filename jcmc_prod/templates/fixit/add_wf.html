@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block content%}
+
+<form name='cmdForm' action="addwf" method="post">
+        {% csrf_token %}
+<table class="roundedCorners ">
+    <tr>
+        <td>WF Name</td>
+         <td><input type="text" id="WfName" name="WfName" maxlength="50"></td>
+    </tr>
+    <tr>
+        <td>Command</td>
+        <td> <textarea   required id="Command" name="Command" rows="2" cols="50" maxlength="500" ></textarea></td>
+    </tr>
+<tr>
+    <td><input  name='button' type="submit" value=Add></td>
+    <td></td>
+</tr>
+</table>
+</form>
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    {% if message.tags %} "{{ message.tags }}"{% endif %} {{ message }}
+    {% endfor %}x
+</ul>
+{% endif %}
+<!--=======DISPLAPYING THE EXISTING WFs ==============================================-->
+<br />
+<br />
+<hr>
+
+<!--TODO: ENABLE REMOVE BUTTON ON WF-->
+<div class="container mt-3">
+    {% if query_results %}
+    <h5>Existing WFs: <b> {{script_count}} </b></h5>
+
+    <table class="roundedCorners">
+        <thead>
+          <tr>
+            <th>JobID</th>
+			<th>WF Name</th>
+            <th>Command</th>
+            <th>Created by</th>
+             <th>DateTime(UTC)</th>
+<!--              <td></td>-->
+          </tr>
+        </thead>
+ {% for query_result in query_results %}
+		<tbody id="myTable">
+		<tr>
+            <td>{{ query_result.id}}</td>
+            <td>{{ query_result.script_name}}</td>
+            <td>{{ query_result.script}}</td>
+            <td>{{ query_result.owner}}</td>
+			<td>{{ query_result.DateTime|date:"d-m-Y G:i:s"}}</td>
+<!--            <td><a href="/addwf" onclick="deleteWf('{{ query_result.id}} {{ query_result.script_name}}')">remove</a></td>-->
+			{%endfor%}
+          </tr>
+		   </tbody>
+    {%endif %}
+      </table>
+ </div>
+
+<!--  <script>-->
+<!--function deleteWf(record){-->
+<!--    var response = window.confirm("Delete record "+record.split('')[1]);-->
+<!--    if (response) {-->
+<!--       alert('Yes')-->
+<!--    }-->
+<!--    else {-->
+<!--        alert('NO')-->
+<!--    }-->
+<!--    }-->
+<!--</script>-->
+
+{% endblock %}

@@ -1,0 +1,14 @@
+- hosts: all
+  strategy: free
+  gather_facts: false
+
+
+  tasks:
+
+
+  - name: grubby
+    shell: grubby --default-kernel
+    register: grub
+
+  - debug: 
+      var: grub.stdout_lines

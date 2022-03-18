@@ -1,0 +1,33 @@
+- hosts: all
+  gather_facts: false
+
+  tasks:
+  - name: copy universal script
+    copy:
+      dest: /tmp/test.sh
+      src: /tmp/test.sh
+
+
+  - name: Executing pathing script
+    shell: sh /tmp/test.sh
+    register: output
+
+  - name: Create a log file
+    file:
+        path: "/tmp/oit_patching_{{cr_num}}_{{ lookup('pipe', 'date +%Y%M%d%H%M%S') }}.log"
+        state: touch
+        owner: root
+        group: sys
+        mode: 0555
+    run_once: true
+    register: local_log_file
+    delegate_to: localhost
+
+  - debug:
+     msg: "Log file : {{ local_log_file.dest }}"
+
+
+  - local_action: lineinfile line={{ansible_fqdn}}{{ output.stdout_lines[-1] }} path={{ local_log_file.dest }}
+
+  - debug:
+     msg: "{{ output.stdout_lines[-1] }}"

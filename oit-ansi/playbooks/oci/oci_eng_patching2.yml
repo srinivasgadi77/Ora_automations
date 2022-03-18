@@ -1,0 +1,28 @@
+- hosts: all
+  remote_user: ops
+  become: yes
+  become_method: sudo
+  become_user: root
+#  strategy: free
+#    gather_facts: false
+#    
+#
+  tasks:
+  - name: copy universal script
+    copy:
+      dest: /tmp/universal_patch.py
+      src: /scratch/oit-ansi/scripts/universal_patch.py
+
+  - name: Executing job
+    shell: nohup python /tmp/universal_patch.py &
+    register: output
+    ignore_errors: yes
+
+  - name: Get status
+    set_fact:
+      job_status: "{{ 'OK' if output.rc == 0  else 'FAIL' }}"
+
+  - debug:
+       msg: "{{ inventory_hostname }} : {{ job_status }}"
+
+

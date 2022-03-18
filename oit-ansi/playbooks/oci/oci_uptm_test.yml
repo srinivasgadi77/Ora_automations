@@ -1,0 +1,17 @@
+---
+- hosts: "{{ oc_hosts }}"
+  become: yes
+  become_user: "{{ oci_user }}"
+  become_method: sudo
+#  become_flags: ''
+  gather_facts: false
+
+  tasks:
+  - name: uptime
+    shell: "uptime;uname -r"
+    register: output
+
+
+  - debug:
+       msg: "{{ output.stdout }}"
+

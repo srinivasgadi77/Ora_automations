@@ -1,0 +1,83 @@
+- hosts: all
+  remote_user: srgadi
+  become: yes
+  become_method: sudo
+  become_user: root
+#  strategy: free
+  gather_facts: false
+  #serial: 200
+
+  vars:
+     success_log: /tmp/pre_checks_"{{ ldap +'_'+cr_num+'_'+tag}}"_success.log
+     error_log: /tmp/pre_checks_"{{ ldap +'_'+cr_num+'_'+tag}}"_error.log
+     missing_hosts_log: /tmp/eng_checks_"{{ ldap +'_'+cr_num+'_'+tag}}"_missing_hosts.log
+
+  tasks:
+  - name: copy pre-check script
+    copy:
+      dest: /tmp/pre_patch_oit_checks_org.py
+      src:  /scratch/oit-ansi/scripts/pre_patch_oit_checks.py
+
+  #Creating empty log files
+  - local_action: command touch "{{ success_log }}"
+  - local_action: command touch "{{ error_log }}"
+
+  - name: Get old ( > 2 hrs ) running processes list from remote host
+    ignore_errors: yes
+    shell: "ps -e -o 'pid,etimes,command' | gwk '{if($2>7200) print $0}' | grep pre_patch_oit_checks | grep -v grep  | awk '{print $1}'"
+    register: running_processes
+
+  - name: Kill running processes
+    ignore_errors: yes
+    shell: "kill -9 {{ item }}"
+    with_items: "{{ running_processes.stdout_lines }}"
+    when: running_processes.stdout_lines != ""
+
+  - name: Executing pre check script
+#    script: python /scratch/oit-ansi/scripts/pre_patch_oit_checks_updated.py
+    shell: python /tmp/pre_patch_oit_checks_org.py
+    async: 600
+    poll: 0
+    ignore_errors: yes
+    register: yum_sleeper
+
+  - name: 'Verify the pre check job status'
+    async_status: jid={{ yum_sleeper.ansible_job_id }}
+    register: output
+    until: output.finished
+    retries: 18
+    ignore_errors: yes
+    delay: 30
+
+  - name: Get hostname
+    shell: hostname -s
+    register: hst
+
+  - name: get logs
+    set_fact:
+       complt_res : "{{ hst.stdout}} : {{ output.stdout_lines[-1] if not output.failed else output.stderr_lines }}"
+    when: output.stdout_lines is defined
+
+  - name: check manually
+    set_fact:
+      complt_res : "{{ hst.stdout}} : Failed to execute, check logs manually on target"
+    when: output.stdout_lines is undefined
+
+  - name: Success entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/pre_checks_{{ ldap +'_'+cr_num+'_'+tag}}_success.log"
+    when: 
+      output.failed == false  and
+      "FAIL" not in output.stdout_lines[-1] 
+
+
+  - name: Failure entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/pre_checks_{{ ldap +'_'+cr_num+'_'+tag}}_error.log"
+    when: 
+     output.failed == true or "FAIL" in output.stdout_lines[-1]
+
+  - name: Detecting missing hosts
+    include: find_missing_hosts.yml
+    delegate_to: 127.0.0.1
+
+  - debug:
+     msg: "{{ complt_res }}"

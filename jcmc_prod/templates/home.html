@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content%}
+<h1>hello world</h1>
+{{ Name }},{{ Number }}
+<ul>
+
+{% for abc in  MyList %}
+  {% if abc == 43 %}
+  
+	  <li> {{ forloop.counter }} - {{ abc}}</li>
+	  <li> {{ forloop.counter }} - {{ abc|add:100}}</li>
+  {% elif abc == 34 %}
+      <li> {{ forloop.counter }} - "This is not a look"</li>
+  
+  {% else %}
+      <li> {{ forloop.counter }} - {{ abc }} </li>
+  {% endif %}
+ 
+{% endfor %}
+
+</ul>
+
+<h1>This is from home templates</h1>
+{%endblock %}
+

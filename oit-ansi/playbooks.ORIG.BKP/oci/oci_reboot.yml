@@ -1,0 +1,10 @@
+- hosts: all
+  remote_user: srgadi
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: false
+
+  tasks:
+  - name: rebooting (shutdown -r now )
+    shell: shutdown -r now 

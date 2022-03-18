@@ -1,0 +1,43 @@
+- hosts: all
+  gather_facts: false
+
+  tasks:
+
+  - name: uname
+    shell: /scratch/srgadi/script/monthly_patch_validate.py
+    register: output
+
+  - name: get hostname
+    shell: hostname -s
+    register: hst 
+ 
+#  - debug:
+#     msg: "hostname : {{ hst }}"
+
+  - name: facts
+    set_fact:
+       new_var : "{{ hst.stdout + ':' + output.stdout_lines[0] }}"
+
+  - debug:
+     msg : "{{ new_var }}"
+
+  - name: Create a log file
+    file: 
+        path: "/tmp/ansi_{{cr_num}}_{{ lookup('pipe', 'date +%Y%M%d%H%M%S') }}.log"
+        state: touch
+        owner: root
+        group: sys
+        mode: 0555
+
+    run_once: true
+    register: local_log_file
+    delegate_to: localhost
+ 
+  - debug:
+     msg: "log file : {{ local_log_file.dest }}"
+
+  - local_action: lineinfile line={{ new_var }} path={{ local_log_file.dest }}
+
+  - debug:
+     msg: "{{ output.stdout_lines[-1].split('.')[0] }}"
+

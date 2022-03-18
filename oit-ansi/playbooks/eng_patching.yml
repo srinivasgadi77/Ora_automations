@@ -1,0 +1,93 @@
+- hosts: all
+  strategy: free
+  gather_facts: false
+#  serial: 200
+
+  vars:
+     #define filenames
+     success_log: /tmp/eng_patch_"{{ ldap +'_'+cr_num+'_'+tag}}"_success.log
+     error_log: /tmp/eng_patch_"{{ ldap +'_'+cr_num+'_'+tag}}"_error.log
+     reboot_required: /tmp/eng_patch_{{ ldap +'_'+cr_num+'_'+tag}}_reboot_required.txt
+     missing_hosts_log: /tmp/eng_patch_"{{ ldap +'_'+cr_num+'_'+tag}}"_missing_hosts.log
+
+
+  tasks:
+  - name: copy universal script
+    copy:
+      dest: /tmp/universal_patch.py
+      src: /scratch/oit-ansi/scripts/universal_patch.py
+
+  #Creating empty log files
+  - local_action: command touch "{{ success_log }}"
+  - local_action: command touch "{{ error_log }}"
+  - local_action: command touch "{{ reboot_required }}"
+
+
+  - name: Executing job
+    shell: python /tmp/universal_patch.py
+    async: 2000
+    poll: 0
+    ignore_errors: yes
+    register: yum_sleeper
+
+
+  - name: Verify the patching job status
+    async_status: jid={{ yum_sleeper.ansible_job_id }}
+    register: output
+    until: output.finished
+    retries: 33
+    delay: 60
+    ignore_errors: yes
+
+  - name: Set facts
+    set_fact:
+       complt_res : "{{ inventory_hostname }} : {{ output.stdout_lines[-1] if not output.failed else output.stderr_lines }}"
+    when: output.stdout_lines is defined
+
+  - name: Required manual intervension
+    set_fact:
+      complt_res : "{{ inventory_hostname }} : TimeOut:Patching job still running on target host"
+    when: output.stdout_lines is undefined
+
+  - name: Success entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/eng_patch_{{ ldap +'_'+cr_num+'_'+tag}}_success.log"
+
+    register: suc_state
+    when: 
+      output.failed == false  and
+      ( "OL_KERNEL_PATCH_SUCCESSFUL"  in output.stdout_lines[-1] or
+        "OL5_PATCH_SUCCESSFUL" in output.stdout_lines[-1] or
+        "SECURITY AND KERNEL PATCH IS ALREADY UPDATED" in output.stdout_lines[-1] or
+      ( "OVM_UPGRADE_SUCCESSFUL" in output.stdout_lines[-1] and "OVM_KERNEL_PATCH_SUCCESSFUL" in output.stdout_lines[-1])
+      )
+
+    notify:
+      #record_succ_hosts
+      - get_reboot_state
+      - record_succ_hosts
+
+
+  - name: Failure entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/eng_patch_{{ ldap +'_'+cr_num+'_'+tag}}_error.log"
+    when: 
+     suc_state.failed is undefined
+
+  - debug:
+     msg: "{{ complt_res }}"
+
+  - name: Detecting missing hosts
+    include: find_missing_hosts.yml
+    delegate_to: 127.0.0.1
+
+  handlers:
+
+    - name: get_reboot_state
+      script: /scratch/srgadi/script/get_host_reboot_status.py
+      register: reboot_state
+
+    - debug:
+       msg: "{{ reboot_state }}"
+
+    - name : record_succ_hosts
+      local_action: lineinfile line={{ inventory_hostname }} path="/tmp/eng_patch_{{ ldap +'_'+cr_num+'_'+tag}}_reboot_required.txt"
+      when: '"RebootRequired" in reboot_state.stdout'

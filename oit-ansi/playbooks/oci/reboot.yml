@@ -1,0 +1,10 @@
+- hosts: "{{ oc_hosts }}"
+  remote_user:  "{{ oci_user }}"
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: false
+
+  tasks:
+  - name: rebooting (shutdown -r now )
+    shell: shutdown -r now 

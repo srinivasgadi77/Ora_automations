@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block content%}
+<!--   <div align="right">-->
+<!--             <p>This page auto  <a  href="#" onclick="history.go(0)">refresh</a> for every 60s.</p>-->
+<!--    </div>-->
+<!--==========================================================================-->
+
+<table >
+    <tr>
+        <td>
+            <h4>By State:</h4>
+            <table>
+                    {% if statsByState %}
+                        {% for state, count in statsByState.items%}
+                          <tr>
+                              <td><a href=/patchreport/{{state}}>{{state}}</a></td>
+                              <td>{{count}}</td>
+                          </tr>
+                        {% endfor %}
+                    {%endif %}
+                    <tr>
+                         <td><a href=/patchreport>Total Hosts</a></td>
+                        <td>{{Count}}</td>
+                    </tr>
+                <tr>
+                    <br>
+                </tr>
+                    <tr>
+                        <td><b>Success %</b></td>
+                        <td><b>{{success_ration}}</b></td>
+                    </tr>
+
+                </table>
+
+        </td>
+                  <td width="60%" >
+<!--                        {{WfGraphData.WF}}-->
+                        <img src="data:image/png;base64,{{Graph}}" alt="Blue dot" height="250" width="390" align="right"/>
+                    </td>
+    </tr>
+
+</table>
+<br>
+<!--==========================================================================-->
+<div class="container mt-3">
+    {% if query_results %}
+    <hr>
+        <div >
+            <div id="first">The page shows max <i>500</i> rows.</div>
+            <div id="second"><a href=/downloadreport/9000000000> Download complete Report</a>    </div>
+        </div>
+    <table class="roundedCorners">
+        <thead>
+          <tr>
+                 <th> Jobid</th>
+                <th>host_name          </th>
+                <th>State</th>
+                 <th>DateTime(UTC)<br>[dd-mm H:M:S]</th>
+                <th>preCves<br>Important </th>
+                <th>preCves<br>Critical  </th>
+                <th>postCves<br>critical </th>
+                <th>pre<br>CvesLow       </th>
+                <th>pre_kernel         </th>
+                <th>preOs<br>version     </th>
+                <th>cves<br>Pending       </th>
+                <th>cves_status        </th>
+                <th>snapshot_date      </th>
+                <th>uptrack_status     </th>
+                <th>upgraded_kernel    </th>
+                <th>preCves<br>Moderate  </th>
+                <th>non_uek_status     </th>
+                <th>kernel_status      </th>
+                <th>reboot_status      </th>
+                <th>postCves<br>moderate </th>
+                <th>updatedOs<br>Version </th>
+                <th>postCves<br>Important</th>
+                <th>owner_email        </th>
+          </tr>
+        </thead>
+ {% for query_result in query_results %}
+		<tbody id="myTable">
+		<tr>
+<!--            <td><a href=/reports/{{ query_result.Pid }} target="_blank" > {{ query_result.Pid }}</a></td>-->
+            <td>{{ query_result.id }}</td>
+            <td>{{ query_result.host_name  }}</td>
+            <td>{{ query_result.State}}</td>
+            <td>{{ query_result.DateTime|date:"d-m G:i:s"}}</td>
+            <td>{{ query_result.pre_cves_important }}</td>
+            <td>{{ query_result.pre_cves_critical  }}</td>
+            <td>{{ query_result.post_cves_critical }}</td>
+            <td>{{ query_result.pre_cves_low       }}</td>
+            <td>{{ query_result.pre_kernel         }}</td>
+            <td>{{ query_result.pre_os_version     }}</td>
+            <td>{{ query_result.cves_pending       }}</td>
+            <td>{{ query_result.cves_status        }}</td>
+            <td>{{ query_result.snapshot_date      }}</td>
+            <td>{{ query_result.uptrack_status     }}</td>
+            <td>{{ query_result.upgraded_kernel    }}</td>
+            <td>{{ query_result.pre_cves_moderate  }}</td>
+            <td>{{ query_result.non_uek_status     }}</td>
+            <td>{{ query_result.kernel_status      }}</td>
+            <td>{{ query_result.reboot_status      }}</td>
+            <td>{{ query_result.post_cves_moderate }}</td>
+            <td>{{ query_result.updated_os_version }}</td>
+            <td>{{ query_result.post_cves_important}}</td>
+            <td>{{ query_result.owner_email        }}</td>
+			{%endfor%}
+          </tr>
+		   </tbody>
+    {%endif %}
+      </table>
+ </div>
+
+<script>
+$(document).ready(function(){
+  $("#myInput").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#myTable tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});
+</script>
+
+{%endblock %}

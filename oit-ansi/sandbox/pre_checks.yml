@@ -1,0 +1,44 @@
+- hosts: all
+  gather_facts: false
+
+  tasks:
+
+  - name: copy pre-check script
+    copy:
+      dest: /tmp/pre_patch_oit_checks_org.py
+      src: /scratch/srgadi/script/pre_patch_oit_checks_org.py
+
+
+  - name: Executing pre check script
+    shell: python /tmp/pre_patch_oit_checks_org.py
+    register: output
+
+  - name: Create a log file
+    file:
+        path: "/tmp/pre_check_{{cr_num}}_{{ lookup('pipe', 'date +%Y%M%d%H%M%S') }}.log"
+        state: touch
+        owner: root
+        group: sys
+        mode: 0555
+
+    run_once: true
+    register: local_log_file
+    delegate_to: localhost
+
+  - debug:
+     msg: "Log file : {{ local_log_file.dest }}"
+
+  - name: get hostname
+    shell: hostname -s
+    register: hst
+
+  - name: facts
+    set_fact:
+       complt_res : "{{ hst.stdout + ':' + output.stdout_lines[-1] }}"
+
+
+  - local_action: lineinfile line={{ complt_res }} path={{ local_log_file.dest }}
+
+  - debug:
+     msg: "{{ output.stdout_lines[-1] }}"
+

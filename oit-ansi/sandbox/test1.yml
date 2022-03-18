@@ -1,0 +1,12 @@
+- hosts: all
+  gather_facts: false
+
+  tasks:
+- name: Insert/Update eth0 configuration stanza in /etc/network/interfaces
+        (it might be better to copy files into /etc/network/interfaces.d/)
+  blockinfile:
+    path: /etc/network/interfaces
+    block: |
+      iface eth0 inet static
+          address 192.0.2.23
+          netmask 255.255.255.0

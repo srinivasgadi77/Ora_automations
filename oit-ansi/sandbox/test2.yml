@@ -1,0 +1,10 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+  - name: checking version of python
+    shell: python --version
+    register: py
+
+  - debug:
+      msg: '{% if py.stdout != "" %} {{ py.stdout }} {% else %} {{ py.stderr }} {% endif %}'

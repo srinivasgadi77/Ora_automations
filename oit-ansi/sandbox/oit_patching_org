@@ -1,0 +1,65 @@
+#!/usr/local/python3/bin/python3.6
+import time
+import shutil
+import os
+
+
+def hostlist_in(base_dir=None, ans_host_group=None) :
+
+#    base_dir = ansi_host_group_dir[0]
+#    ans_host_group =  ansi_host_group_dir[1]
+
+    print('\nPaste your host list, press enter and, then press ctrl+d: ')
+    filelist=[]
+
+    try:
+        while True:
+            filelist.append(input())
+    except EOFError:
+        pass
+
+    return filelist
+
+def write_to_file(hosts,cr_num):
+    #import pdb;pdb.set_trace()
+    TIME_NOW=time.strftime('%d%m%Y_%H%m%S')
+    FILE='/scratch/oit-hosts/%s_%s' %(cr_num, TIME_NOW)
+
+    
+    file1 = open(FILE,'w')
+    for host in hosts:
+        file1.write(host)
+        file1.write('\n')
+    file1.close()
+
+    #print('FILE = %s' %FILE)
+    return FILE
+
+def generate_playbooks(hosts_list,cr_num):
+    '''
+    1. precheck
+    2. patcing
+    '''     
+    prechk_cmd='ansible-playbook -i %s /scratch/oit-ansi/playbooks/pre_checks.yml -e cr_num=%s &' %(hosts_list,cr_num)
+    ovm_patching_cmd='ansible-playbook -i %s /scratch/oit-ansi/playbooks/eng_patching.yml -e cr_num=%s &' %(hosts_list, cr_num)
+    log_retrival='ansible-playbook -i %s /scratch/oit-ansi/playbooks/patch_log_retrival.yml -e cr_num=%s &' %(hosts_list, cr_num)
+
+    print("-------------------------")
+    print('Pathing playbook commands:-')
+    print('*************************')
+    print('1.Pre-check:\n%s\n' %prechk_cmd)
+    print('2.Patching:\n%s\n' %ovm_patching_cmd)
+    print('3.Collect logs:\n%s\n' %log_retrival)
+
+if __name__ == "__main__" :
+
+#     """ This Program needs custom imports """
+     print('Enter Cr Number:')
+     cr_num=input()
+
+     hosts = hostlist_in()
+     #print(hosts)
+     hosts_list = write_to_file(hosts,cr_num)
+    
+     generate_playbooks(hosts_list,cr_num)
+

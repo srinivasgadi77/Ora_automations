@@ -1,0 +1,52 @@
+- hosts: all
+  strategy: free
+  gather_facts: false
+#  serial: 400
+
+  vars:
+     success_log: /tmp/eng_uanme_"{{ ldap +'_'+cr_num+'_'+tag}}"_success.log
+     error_log: /tmp/eng_uanme_"{{ ldap +'_'+cr_num+'_'+tag}}"_error.log
+     missing_hosts_log: /tmp/eng_uanme_"{{ ldap +'_'+cr_num+'_'+tag}}"_missing_hosts.log
+
+  tasks:
+
+  - local_action: command touch "{{ success_log }}"
+  - local_action: command touch "{{ error_log }}"
+
+  - name: uname
+    shell: uname -a;hostname
+    async: 120
+    poll: 0
+    register: yum_sleeper
+
+  - name: 'Verify the job status'
+    async_status: jid={{ yum_sleeper.ansible_job_id }}
+    register: output
+    until: output.finished
+    retries: 12
+    delay: 10
+    ignore_errors: true
+
+  - name: facts
+    set_fact:
+       complt_res : "{{ output.stdout_lines[1]  + ':' + output.stdout_lines[0] if not output.failed else output.stderr_lines }}"
+
+  - name: Success entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/eng_uanme_{{ ldap +'_'+cr_num+'_'+tag}}_success.log"
+    when: 
+      output.failed == false  and
+      "FAIL" not in output.stdout_lines[-1] 
+
+
+  - name: Failure entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/eng_uanme_{{ ldap+'_'+cr_num+'_'+tag}}_error.log"
+    when: 
+     output.failed == true
+
+  - name: Detecting missing hosts
+    include: find_missing_hosts.yml
+    delegate_to: 127.0.0.1
+
+
+  - debug:
+     msg: "{{ complt_res }}"

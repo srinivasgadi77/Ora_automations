@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block content%}
+      <!--  ENABLE AUTO REFRESH -->
+<head>
+<!--<meta http-equiv="refresh" content="300" >-->
+
+</head>
+
+<body>
+   <div align="right">
+             <p>This page auto  <a  href="#" onclick="history.go(0)">refresh</a> for every 5min.</p>
+    </div>
+
+   {%if total_hosts%}
+
+<table >
+    <tr>
+        <td>
+            <table>
+                <tr>
+                    {% if Queued%}
+                    <td>Total Hosts/Queued</td>
+                    <td>{{total_hosts}}/{{Queued}}</td>
+                    {%else%}
+                    <td>Total Hosts</td>
+                    <td>{{total_hosts}}</td>
+                    {%endif%}
+                </tr>
+                {% if Pid %}
+                    <tr>
+                        <td>JobID</td>
+                        <td>{{Pid}}</td>
+                    </tr>
+                    <tr>
+                        <td>WF/Command</td>
+                        <td>{{WF}}   :   {{ script_name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Executed Time</td>
+                        <td>{{ExecutionDate|date:"d-m-Y G:i:s"}} UTC</td>
+                    </tr>
+                    <tr>
+                        <td>JobState</td>
+                        <td>{{Complete_job_state}}</td>
+                    </tr>
+                {%endif%}
+            </table>
+{%endif%}
+        </td>
+        <td>
+            <div>
+                <table>
+                    <tr>
+                        <th colspan = 2>By state</th>
+
+                    </tr>
+                    <!--   IF REQUESTS COMING FROM DASHBOARD THIS SNIPT WILL BE EXECUTED-->
+<!--                    {% if DashBoard  %}-->
+<!--                            {%for data in statsByState %}-->
+<!--                            <tr>-->
+<!--                                    <td>{{data.State}}</td>-->
+<!--                                    <td>{{data.State__count}}</td>-->
+<!--                            </tr>-->
+<!--                            {%endfor%}-->
+<!--                    {%endif %}-->
+
+                    <!--   IF REQUESTS COMING FROM REPORTS  THIS SNIPT WILL BE EXECUTED-->
+                    {% if statsByState %}
+                        {% for state, count in statsByState.items%}
+                          <tr>
+                              {%if Pid %}
+                              <td><a href=/reports/{{Pid}}/{{state}}>{{state}}</a></td>
+                              {% else %}
+                              <td><a href=/reports/{{state}}>{{state}}</a></td>
+                              {% endif  %}
+                              <td>{{count}}</td>
+                          </tr>
+                        {% endfor %}
+                    {%endif %}
+
+                </table>
+            </div>
+        </td>
+    </tr>
+
+</table>
+<br>
+<hr>
+<!--   Creating report table-->
+   <div>
+    <table class="roundedCorners">
+    {% if query_results %}
+        <div >
+            <div id="first">The page shows max <i>500</i> rows.</div>
+            <div id="second"><a href=/downloadreport/{{Pid}}> Download complete Report</a>    </div>
+        </div>
+
+        <thead>
+          <tr>
+            <th>JobID</th>
+            <th>SubmittedBy</th>
+            <th>DateTime(UTC)</th>
+			<th>STATE</th>
+            <th>HOSTNAME</th>
+            <th>RESULT</th>
+          </tr>
+        </thead>
+         {% for data in query_results %}
+
+        <tbody id="myTable">
+          <tr>
+            <td><a href=/reports/{{ data.Pid }} target="_blank" > {{ data.Pid }}</a></td>
+            <td>{{ data.SubmittedBy}}</td>
+			<td>{{ data.DateTime|date:"d-m-Y G:i:s"}}</td>
+            <td>{{ data.State}}</td>
+            <td>{{ data.Hostname}}</td>
+            <td>{{ data.Result}}</td>
+          </tr>
+        </tbody>
+         {% endfor %}
+    {%else%}
+        <h4> No records found for today </h4>
+    {%endif %}
+      </table>
+ </div>
+
+<script>
+$(document).ready(function(){
+  $("#myInput").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#myTable tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});
+</script>
+</body>
+{% endblock%}

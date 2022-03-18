@@ -1,0 +1,66 @@
+- hosts: all
+  strategy: free
+  gather_facts: false
+#  serial: 400
+
+  vars:
+     success_log: /tmp/eng_patch_logs_"{{ ldap +'_'+cr_num+'_'+tag}}"_success.log
+     error_log: /tmp/eng_patch_logs_"{{ ldap +'_'+cr_num+'_'+tag}}"_error.log
+     missing_hosts_log: /tmp/eng_patch_logs_"{{ ldap +'_'+cr_num+'_'+tag}}"_missing_hosts.log
+
+  tasks:
+
+  - name: Copying script
+    copy:
+      dest: /tmp/eng_post_check.py
+      src:  /scratch/oit-ansi/scripts/eng_post_check_log.py
+
+  #Creating empty log files
+  - local_action: command touch "{{ success_log }}"
+  - local_action: command touch "{{ error_log }}"
+
+
+  - name: Executing  script
+    shell: python /tmp/eng_post_check.py
+    async: 1000
+    poll: 0
+    ignore_errors: yes
+    register: yum_sleeper
+
+  - name: 'Verify the job status'
+    async_status: jid={{ yum_sleeper.ansible_job_id }}
+    register: output
+    until: output.finished
+    retries: 30
+    ignore_errors: true
+
+  #- debug:
+  #   msg: "=====> {{ output.failed}}
+ #}}"
+
+  - name: Get hostname
+    shell: hostname -s
+    register: hst
+
+  - name: facts
+    set_fact:
+       complt_res : "{{ hst.stdout}} : {{ output.stdout_lines[-1]  if not output.failed else output.stderr_lines }}"
+
+  - name: Success entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/eng_patch_logs_{{ ldap +'_'+cr_num+'_'+tag}}_success.log"
+    when: 
+      output.failed == false or output.failed == False
+#      "FAIL" not in output.stdout_lines[-1] 
+
+
+  - name: Failure entry
+    local_action: lineinfile line={{ complt_res }} path="/tmp/eng_patch_logs_{{ ldap +'_'+cr_num+'_'+tag}}_error.log"
+    when: 
+     output.failed == true or output.failed == True
+
+  - name: Detecting missing hosts
+    include: find_missing_hosts.yml
+    delegate_to: 127.0.0.1
+
+  - debug:
+     msg: "{{ complt_res }}"

@@ -1,0 +1,10 @@
+- hosts: all
+  gather_facts: false
+
+  tasks:
+  - name: get UEK
+    shell: curl http://pd-yum-slc-01.us.oracle.com/data_files/oit/scripts/get_host_uek.py | python
+    register: uek_val
+
+  - debug:
+    var: {{ uek_val }}

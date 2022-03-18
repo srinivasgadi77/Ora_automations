@@ -1,0 +1,3 @@
+- name: Detecting missing hosts
+  command: /scratch/oit-ansi/scripts/get_ansible_run_missing_hosts2.py -a {{ inventory_file }} -s {{ log_file }}  -l "{{ missing_hosts_log }}"
+

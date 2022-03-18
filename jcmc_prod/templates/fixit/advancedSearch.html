@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block content%}
+
+<form name='AdvSearchForm' action="advSearch" method="post">
+        {% csrf_token %}
+<table >
+    <tr >
+        <td>Keyword</td>
+<!--         <td ><input  type="text" size="48" id="Keyword" name="Keyword" maxlength="100"><br>-->
+        <td>
+         <textarea  required name="Keyword" id="Keyword" rows="2" cols="50" maxlength="50000" placeholder="shotNames"></textarea>
+<!--             Search by <i>Hostname / Results / State / Username </i>-->
+         </td>
+    </tr>
+<tr>
+    <td colspan="2"> <input  type="submit" value=Search> </td>
+</tr>
+</table>
+</form>
+
+
+{% if search_results%}
+        <br>
+        <div >
+            <div id="second">The page shows max <i>100</i> rows.</div>
+            <div id="first">Found <b><i>{{results_count}}</i> hosts |  unknown : {{donot_host_count}}</b> </div>
+        </div>
+
+
+ <table class="roundedCorners">
+        <thead>
+          <tr>
+                    <th>hostname</th>
+                    <th>State</th>
+                    <th>DateTime</th>
+                    <th>Pre_kernel</th>
+                    <th>Upgraded_kernel</th>
+                    <th>Cves_status</th>
+                    <th>Kernel_status</th>
+                    <th>Pptrack_status</th>
+                    <th>Non_uek_status</th>
+                    <th>Reboot_status</th>
+          </tr>
+        </thead>
+     {% for query_result in search_results %}
+		<tbody >
+		        <tr>
+                        <td>{{query_result.host_name}}</td>
+                        <td>{{query_result.State}}</td>
+                        <td>{{query_result.DateTime|date:"d-m-Y G:i:s"}}</td>
+                        <td>{{query_result.pre_kernel}}</td>
+                        <td>{{query_result.upgraded_kernel}}</td>
+                        <td>{{query_result.cves_status}}</td>
+                        <td>{{query_result.kernel_status}}</td>
+                        <td>{{query_result.uptrack_status}}</td>
+                        <td>{{query_result.non_uek_status}}</td>
+                        <td>{{query_result.reboot_status}}</td>
+                </tr>
+		 </tbody>
+     {%endfor%}
+         </table>
+{%endif %}
+
+<!--============================unknown hosts ================-->
+<br>
+<hr>
+{% if donot_host_count %}
+<div >
+    <p>Following <b>{{donot_host_count}}</b> hosts info not found in patch table:</p>
+         <table class="roundedCorners">
+                <thead>
+                      <tr>
+                            <th>hostname</th>
+                      </tr>
+                </thead>
+                {% for query_result in dono_hosts %}
+		        <tbody >
+		        <tr>
+                        <td>{{query_result}}</td>
+                </tr>
+		        </tbody>
+             {%endfor%}
+         </table>
+</div>
+
+{%endif%}
+
+{%endblock%}

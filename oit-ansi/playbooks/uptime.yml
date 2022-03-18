@@ -1,0 +1,14 @@
+- hosts: all
+  strategy: free
+  gather_facts: false
+
+
+  tasks:
+
+
+  - name: uptime
+    shell: uptime
+    register: grub
+
+  - debug: 
+      var: grub.stdout_lines

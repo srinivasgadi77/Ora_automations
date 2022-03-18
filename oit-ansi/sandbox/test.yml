@@ -1,0 +1,18 @@
+- hosts: localhost
+  #gather_facts: false
+
+  tasks:
+  - name : get os type
+    shell: uname
+    register: un
+  
+  - name: facts
+    set_fact:
+       new_var : "{{ 'srini' + un.stdout }}"
+   
+#  - name: facts1
+#    set_fact:
+#       new_var1:  ansible_hostname
+
+  - debug:
+     msg: "{{ ansible_hostname + new_var }}"

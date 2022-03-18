@@ -1,0 +1,60 @@
+#!/usr/bin/python
+# Author : Srinivas Gadi
+# Purpose : OIT Patching pre installation
+
+import os
+import sys
+import urllib2
+import getpass
+import platform
+import socket
+from commands import getstatusoutput
+import logging
+import time
+# import argparse
+import socket
+
+
+"""
+host=$(hostname -s)
+hst=$(echo $host | cut -d "." -f1)
+
+tail -1 $hst*.csv
+
+"""
+def sanpshot():
+
+    try:
+       get_json='https://pds-chef-dr-infrastructure.us.oracle.com/dis_chef_repo/security/monthly_patch.json'
+       response = urllib2.urlopen(get_json).read()
+       dict_data=eval(response)
+       return dict_data['patch_snapshot_date']
+
+    except:
+       sys.exit('Failed to read json')
+
+def get_log_file():
+    host = socket.gethostname()
+    hostname=host.split('.')[0]
+    
+    local_file_exits = os.path.isfile("/root/"+hostname+".csv") 
+    if local_file_exits:
+       return local_file_exits
+    else:
+       return 'NoLog'
+
+def get_data_cves():
+    patch_url=https://pds-chef-dr-infrastructure.us.oracle.com/dis_chef_repo/security/ol_cpu_patching.py
+
+    patching_script='rm -rf /tmp/ol_cpu_patching.py;cd /tmp;wget %s' %patch_url
+    (state,output) = getstatusoutput(patching_script)
+     if state == 0:
+        cmd='python /tmp/ol_cpu_patching.py '
+def get_data():
+       snaphost_date=sanpshot()
+       print("snaphost_date = %s" %snaphost_date)
+       (stat,output) = getstatusoutput("grep -w %s /root/%s.csv"%(snaphost_date, hostname))
+       return output
+
+
+print(get_log_file())

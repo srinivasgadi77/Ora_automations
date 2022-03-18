@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title>JC Mate</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href=" https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css">
+  <script src='/static/jss/jquery.js'> </script>
+  <script src='/static/jss/jquery.datetimepicker.full.js'> </script>
+
+  <style>
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+    background-color: #EAEDF0;
+}
+
+td, th {
+  border: 1px solid #ffffff      ;
+  text-align: left;
+  padding: 8px;
+}
+
+/*tr:nth-child(odd) {*/
+/*  background-color: #d8dadd    ;*/
+/*}*/
+
+
+table.roundedCorners {
+  border: 1px;
+  border-radius: 7px;
+  border-spacing: 0;
+  }
+table.roundedCorners td,
+table.roundedCorners th {
+  border-bottom: 1px;
+  padding: 10px;
+  }
+table.roundedCorners tr:last-child > td {
+  border-bottom: none;
+}
+
+#first {
+    width: 500px;
+    float: left;
+}
+#second {
+    width: 200px;
+    float: right;
+}
+      
+</style>
+
+</head>
+<body>
+
+<nav class="navbar navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/fixit">JC Mate</a>
+    </div>
+    <ul class="nav navbar-nav">
+<!--      <li ><a href="/fixit">Fixit</a></li>
+
+        <li><a href=/patchreport  >PatchReport</a></li> -->
+      <li><a href=/Jobs >Jobs</a></li>
+<!--      <li><a href=/reports  target="_blank">Reports</a></li> -->
+      <li><a href=/addwf  >Add WF</a></li>
+<!--      <li><a href=/advSearch >Search</a></li>
+      <li><a href=/jcadmin  >JC Admin</a></li>
+       <li><a href=/dashboard  >Dashboard</a></li> -->
+      <li >  <input align="right" class="form-control id="myInput" type="text" placeholder="Search.."></li> 
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+{% block content%}
+
+{% endblock %}
+</div>
+
+</body>
+</html>
+

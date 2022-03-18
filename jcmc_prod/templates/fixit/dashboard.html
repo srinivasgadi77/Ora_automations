@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+<!--{% load static %}-->
+{% block content%}
+
+
+
+<h3> By WF</h3>
+<div>
+    <table class="roundedCorners" style="width:100%">
+        <thead>
+          <tr>
+              <th>WF</th>
+              <th>State</th>
+              <th>Graph</th>
+          </tr>
+        </thead>
+
+        <tbody>
+        {% for WF,groupByState in groupByWf.items%}
+            {%if groupByState.0%}
+                <tr>
+                       <td><a href=/dashboard/{{WF}}>{{WF}}</a></td>
+                        <td>
+                              <table>
+                                   {%for  data in groupByState.0 %}
+                                       <tr>
+    <!--                                        <td>{{data.State}}</td>-->
+                                           <td><a href=/dashboard/{{WF}}/{{data.State}}>{{data.State}}</a></td>
+                                            <td>{{data.State__count}}</td>
+                                       </tr>
+                                  {%endfor%}
+                              </table>
+                        </td>
+                    <td width="50%">
+                        {{WfGraphData.WF}}
+                        <img src="data:image/png;base64,{{groupByState.1}}" alt="Blue dot" align="right" height="250" width="420"/>
+                    </td>
+                </tr>
+            {%endif%}
+        {%endfor%}
+        </tbody>
+
+      </table>
+ </div>
+
+{% endblock%}

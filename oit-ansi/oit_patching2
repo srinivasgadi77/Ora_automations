@@ -1,0 +1,186 @@
+#!/usr/local/python3/bin/python3.6
+import sys
+import time
+import shutil
+import os
+import subprocess as commands
+from mailer import *
+import smtplib
+
+def hostlist_in(base_dir=None, ans_host_group=None) :
+    print('\nPaste your host list, press enter and, then press ctrl+d: ')
+    filelist=[]
+
+    try:
+        while True:
+            filelist.append(input())
+    except EOFError:
+        print('\n\tValidating hosts status takes a little while...\n')
+        pass
+
+    return filelist
+
+def write_to_file(hosts,cr_num, tag, ldap):
+    TIME_NOW=time.strftime('%d%m%Y_%H%m%S')
+    FILE='/scratch/oit-hosts/%s_%s_%s_%s' %(ldap, cr_num, tag, TIME_NOW)
+
+    
+    file1 = open(FILE,'w')
+    for host in hosts:
+        
+        #Check if given gost/line empty
+        if not host:
+          continue
+
+        file1.write(host)
+        file1.write('\n')
+    file1.close()
+
+    return FILE
+
+   
+def check_if_vm_alive(DOMUs, cr_num, ldap):
+    hosts=write_to_file(DOMUs,cr_num, tag, ldap)
+
+    status, result = commands.getstatusoutput('/usr/local/sbin/fping -f %s' %hosts)
+    #status = 0 means, all hosts are alive and reachable
+
+    unreachable_hosts=[]
+    address_not_found_hosts=[]
+    alive_hosts=[]
+    other_hosts=[]
+    record_dead_logs=[]
+
+    #import pdb;pdb.set_trace()
+    for host in result.split('\n'):
+      if not host:
+         continue
+
+      actual_host=host.split()[0]
+
+      if 'ICMP Echo sent' not in host:
+        if 'is alive' in host:
+           alive_hosts.append(actual_host)
+
+        elif 'unreachable' in host:
+           unreachable_hosts.append(host.split()[0])
+           record_dead_logs.append(' %s : %s ' %('Unreachable',actual_host))
+
+        elif "address not found" in host:
+           address_not_found_hosts.append(host.split()[0])
+           #dead_hosts=record_dead_logs('address_not_found_hosts',host)
+           record_dead_logs.append(' %s : %s ' %('address_not_found',actual_host))
+
+        else:
+           other_hosts.append(actual_host)
+           #dead_hosts=record_dead_logs('other_hosts',host)
+           record_dead_logs.append(' %s : %s ' %('other_hosts',host))
+    
+    return unreachable_hosts, address_not_found_hosts,alive_hosts,other_hosts,record_dead_logs
+ 
+def send_mail(data):
+    sender = 'srinivas.gadi@oracle.com'
+    receivers = ['srinivas.gadi@oracle.com']
+    
+    """message = From: From Person <from@fromdomain.com>
+    To: To Person <to@todomain.com>
+    Subject: SMTP e-mail test"""
+    message = """
+    %s 
+    """ %data
+    try:
+          smtpObj = smtplib.SMTP('localhost')
+          smtpObj.sendmail(sender, receivers, message)
+          print ("Successfully sent email")
+    except SMTPException:
+         print ("Error: unable to send email")
+
+def generate_playbooks(hosts_list,tag, cr_num,ldap_patch):
+    '''
+    1. precheck
+    2. patcing
+    '''     
+    uname_cmd='cd %s;nohup ansible-playbook -i %s /scratch/oit-ansi/playbooks/uname.yml -e "ldap=%s  cr_num=%s tag=%s" >> %s/%s.log &' %(ldap_patch,hosts_list,ldap,cr_num, tag,ldap_patch,cr_num)
+    prechk_cmd='cd %s;nohup ansible-playbook -i %s /scratch/oit-ansi/playbooks/pre_checks.yml -e "ldap=%s cr_num=%s tag=%s"  >> %s/%s.log &' %(ldap_patch,hosts_list,ldap,cr_num, tag,ldap_patch,cr_num)
+    ovm_patching_cmd='cd %s;nohup ansible-playbook -i %s /scratch/oit-ansi/playbooks/eng_patching2.yml -e "ldap=%s cr_num=%s tag=%s" >> %s/%s.log &' %(ldap_patch,hosts_list,ldap, cr_num, tag,ldap_patch,cr_num)
+    log_retrival='cd %s;nohup ansible-playbook -i %s /scratch/oit-ansi/playbooks/patch_log_retrival2.yml -e "ldap=%s cr_num=%s tag=%s" >> %s/%s.log &' %(ldap_patch,hosts_list, ldap,cr_num, tag,ldap_patch,cr_num)
+
+    fqdns_log='/tmp/eng_patch_%s_%s_%s_success_fqdns.txt' %(ldap,cr_num, tag)
+
+    reboot='nohup ansible-playbook -i %s /scratch/oit-ansi/playbooks/reboot.yml -e "ldap=%s cr_num=%s tag=%s" &' %(fqdns_log, ldap,cr_num, tag)
+
+    print("-------------------------")
+    print('Pathing playbook2 commands:-')
+    print('*************************')
+    print('1.Uname:\n%s\n' %uname_cmd)
+    print('2.Pre-check:\n%s\n' %prechk_cmd)
+    print('3.Patching:\n%s\n' %ovm_patching_cmd)
+    print('4.Collect logs(Optional):\n%s\n' %log_retrival)
+#    print('*5.Reboot(careful):\n%s\n' %reboot)
+    print("-------------------------")
+    format_content(cr_num,ldap,uname_cmd,prechk_cmd,ovm_patching_cmd,log_retrival,reboot) 
+ 
+def create_scratch_dir(ldap):
+    TIME_NOW=time.strftime('%d%m%Y_%H%m%S')
+    PATH='/scratch/%s' %ldap
+    if not os.path.exists(PATH):
+       os.makedirs(PATH)
+
+    return PATH
+    
+if __name__ == "__main__" :
+
+#     """ This Program needs custom imports """
+     global dead_hosts
+     dead_hosts = []
+
+     print('Enter LDAP:')
+     ldap=input()
+
+     print('Enter Cr Number:')
+     cr_num=input()
+
+     print('Enter tag Number:')
+     tag=input()
+
+     hosts = hostlist_in()
+
+     unreachable_hosts, address_not_found_hosts,alive_hosts,other_hosts,dead_hosts=check_if_vm_alive(hosts,cr_num, ldap)
+
+     if len(alive_hosts) == 0:
+        sys.exit('\n\tEXIT:All provided hosts are down, hence pathing cant be done')
+     
+     print('Breakup:')
+     #L_FILE='/tmp/%s_dead_hosts' %cr_num
+
+     if len(unreachable_hosts) >0:
+        print('\tUnreachable : %s '%len(unreachable_hosts))
+        #record_dead_logs(dead_hosts,'Unreachable',unreachable_host
+     if len(address_not_found_hosts) >0:
+        print('\tInvalid     : %s' %len(address_not_found_hosts))
+        #record_dead_logs(dead_hosts,'address_not_found_hosts',address_not_found_hosts)
+     
+     if len(alive_hosts) >0:
+        print('\tAlive       : %s' %len(alive_hosts))
+     
+     if len(other_hosts):
+        print('\tOthers      : %s' %len(other_hosts))
+        #record_dead_logs(dead_hosts,'other_hosts',other_hosts)
+
+     dead_hosts=unreachable_hosts+other_hosts+address_not_found_hosts
+#     print('==>dead_hosts %s' %dead_hosts_file)
+     if dead_hosts:
+        #dead_hosts_file=write_to_file(dead_hosts,cr_num, '%s_NotLive' %ldap)
+        dead_hosts_file=write_to_file(dead_hosts,'%s_NotLive' %cr_num, tag, ldap)
+        print('Non-live hosts: %s' %dead_hosts_file)
+
+     print('\n\tWorking on %s live hosts' %(len(alive_hosts)))
+    
+     #create dir under /scratch/ldap to record the nohup log
+     ldap_patch=create_scratch_dir(ldap)
+
+       #---------------------
+
+     hosts_list = write_to_file(alive_hosts,cr_num, tag, ldap)
+     generate_playbooks(hosts_list,tag,cr_num,ldap_patch)
+

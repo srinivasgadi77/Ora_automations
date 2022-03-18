@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block content%}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script>
+        function getSelectedValue() {
+            document.getElementById("selectedresults").value = document.getElementById("dropdown1").value;
+
+            select = document.getElementById("dropdown1");
+            document.getElementById("scriptname").value  = select.options[select.selectedIndex].text;
+        }
+
+        function notEmptySelectedRegix() {
+            document.getElementById("regex").value ="";
+        }
+
+        function ClubLdapPasWd() {
+            var un = document.getElementById("username");
+            document.getElementById('Passwd_lable').innerHTML = "<b>"+ un.value+"</b>"+"@"+"passwd"+"<b style=\"color: red\">*</b>"
+        }
+
+        // function getTextAreaValue() {
+        //        document.getElementById("scriptname").value =  document.getElementById("selectedresults").value;
+        // }
+    </script>
+<!--</head>-->
+
+<style>
+table {
+   border-collapse: collapse;
+  width: 70%;
+  border-spacing: 50px 0;
+}
+
+td {
+  padding: 10px 0;
+}
+</style>
+
+<div>
+    <form  name="dataFrom" enctype = "multipart/form-data"    method="POST">
+    {% csrf_token %}
+        <table class="roundedCorners">
+            <tr>
+                <td>
+                    <select name = 'dropdown1' id="dropdown1" onchange="getSelectedValue();">
+                                <option value='' selected disabled>Select WF </option>
+                                <option value= '' > Adhoc </option>
+                                {% for scriptname,script_value in scriptnames.items%}
+                                        <option value="{{ script_value }}" datascript="{{scriptname}}" >{{ scriptname }}</option>
+                                {% endfor %}
+
+                    </select><b style="color: red">*</b>
+                </td>
+                <td>
+                        <textarea   required id="selectedresults" name="script" rows="2" cols="50" maxlength="50000" placeholder="Command to be executed"></textarea>
+                        <!--            To pass the scriptname to form added hidden parameter-->
+                        <input type='hidden' id= 'scriptname' name='scriptname' value='' />
+                        <a href="/addwf">Add workflow</a>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                         Last records to show<br>(default : 1)
+                </td>
+                <td>
+                         <input required type="number" id="LastLogToShow" name="LastLogToShow" maxlength="50" value="1" min="1" max="10">
+                </td>
+            </tr>
+            <tr>
+                    <td>Guid/Ldap id<b style="color: red">*</b></td>
+                    <td><input required type="text" id="username" name="username" maxlength="100" onfocusout="ClubLdapPasWd()"></td>
+            </tr>
+            <tr>
+
+                    <td><p id='Passwd_lable' >Passwd<b style="color: red">*</b></p> </td><br >
+                    <td><input required type="password" id="Passwd" name="Passwd" maxlength="50"></td>
+            </tr>
+            <tr>
+                    <td>TimeOut</td>
+                <td><input required type="number"  min="1" max="360" id="timeout" name="timeout" maxlength="50" value="30"><b>Min</b> <i>[It will be terminated post <b style="color: red">30min</b>, increase time if needed]</i></td>
+            </tr>
+
+            <tr>
+                <td>
+                    <select name = 'dropdown_regex' id="dropdown_regex" onchange="notEmptySelectedRegix();">
+                            <option value="" selected >Regex </option>
+                            <option value='startswith' >StartsWith </option>
+                            <option value='in' >Contain </option>
+                            <option value='endswith' >Endswith</option>
+                    </select>
+                    <br>
+                    (be cautious while selecting this option)
+                </td>
+                          <td><input required type="text" id="regex" name="regex" maxlength="50"></td>
+            </tr>
+
+            <tr>
+                <td>Threads</td>
+                <td><input  type="number"  min="100" max="5000" id="threads" name="threads" maxlength="50" value="400"></td>
+            </tr>
+            <tr>
+                <td>HostNames</td>
+                <td>
+                            <textarea  name="hostname" rows="2" cols="50" maxlength="50000" placeholder="FQDN(s)/ShotNames"></textarea>
+                            <br>
+                 </td>
+            </tr>
+
+            <tr>
+                <td>FileUpload<br>txt / csv formats</td>
+                <td>
+                        <input   type="file" name="JC_hosts_File">
+                        <br>
+                </td>
+            <tr >
+                <td>
+                    <input  type="button" value=Submit onclick="validateAndSend()">
+                </td>
+                <td></td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+    <br>
+
+<!--What ever the content submitted will be displayed here-->
+<div class="container mt-3">
+    {% if query_results and hosts_count%}
+         <hr>
+    <h5>Working on  <b> {{hosts_count}} </b> hosts:</h5>
+
+    {%if JobId %}
+
+    <p> Click <b><i><a href=/reports/{{JobId }} target="_blank" >  JobID:{{JobId }}  </a></i></b>for progress.</p>
+    {%else%}
+	    <h5> Click <a href=/reports target="_blank" > here</a>  for progress.</h5>
+    {%endif%}
+
+    {% if  not pandas_data %}
+<!--    FIXIT : print pandas table data -->
+
+    <table class="roundedCorners">
+        <thead>
+          <tr>
+            <th>JobID</th>
+              <td>Submitted by</td>
+			<th>DateTime(UTC)</th>
+            <th>HOSTNAME</th>
+          </tr>
+        </thead>
+     {% for query_result in query_results %}
+		<tbody id="myTable">
+		<tr>
+            <td>{{ query_result.Pid}}</td>
+            <td>{{ query_result.SubmittedBy }}</td>
+			<td>{{ query_result.DateTime|date:"d-m-Y G:i:s"}}</td>
+            <td>{{ query_result.Hostname}}</td>
+			{%endfor%}
+        </tr>
+		 </tbody>
+         </table>
+    {%endif %}
+{%endif %}
+ </div>
+
+<script>
+function validateAndSend() {
+    if (dataFrom.script.value === '') {
+        alert('WorkFlow  is mandatory.');
+        return false;
+    }
+    if (dataFrom.LastLogToShow.value === '') {
+        alert('LastLogToShow  is mandatory.');
+        return false;
+    }
+    if (dataFrom.username.value === '') {
+        alert('username is mandatory.');
+        return false;
+    }
+
+    if (dataFrom.Passwd.value === '') {
+        alert('Passwd is mandatory.');
+        return false;
+    }
+
+    //     if (dataFrom.Passwd.value === '') {
+    //     alert('Passwd is mandatory.');
+    //     return false;
+    // }
+    // It check FILE format
+
+     if (dataFrom.dropdown_regex.value && dataFrom.regex.value === "") {
+        alert('Regex value must be provided .');
+        return false;
+    }
+    if (dataFrom.JC_hosts_File.value){
+        extension = dataFrom.JC_hosts_File.value.split('.').pop()
+        if (extension === 'csv' || extension === 'txt'){}
+        else{
+            alert('File Format must be csv or txt ');
+            return false;
+            }
+        }
+
+    if (dataFrom.hostname.value === '' && dataFrom.JC_hosts_File.value === '') {
+        alert('Either of HostName/FileUpload mandatory.');
+        return false;
+    }
+    else {
+        dataFrom.submit();
+    }
+}
+</script>
+
+<script>
+$(document).ready(function(){
+  $("#myInput").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#myTable tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});
+</script>
+
+
+
+<!--</body>-->
+<!--</html>-->
+{%endblock %}

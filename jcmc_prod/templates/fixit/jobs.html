@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content%}
+<meta http-equiv="refresh" content="300" >
+<div >
+    <div style="width: 1%; text-align: right;display:inline-block;"><h3>Jobs:</h3></div>
+     <div style="width: 95%; text-align: right;display:inline-block;"><p>This page auto  <a  href="#" onclick="history.go(0)">refresh</a> for every 5min.</p></div>
+</div>
+
+{% if Jobs %}
+    <table class="roundedCorners">
+        <thead>
+          <tr>
+                <th>JobID</th>
+                <th>Submitted by</th>
+                <th>DateTime(UTC)</th>
+                <th>JobState</th>
+                <th>WF</th>
+                <th>TotalHosts</th>
+                <th>Running</th>
+                <th>Success</th>
+                <th>NonSuccess</th>
+               <th>InvalidHosts</th>
+          </tr>
+        </thead>
+     {% for Job in Jobs %}
+		<tbody id="myTable">
+		<tr>
+            <td><a href=/reports/{{ Job.Pid  }} target="_blank" > {{ Job.Pid }}</a></td>
+
+            <td>{{ Job.Owner }}</td>
+
+			<td>{{ Job.DateTime|date:"d-m-Y G:i:s"}}</td>
+
+            <td>{{Job.JobState}}</td>
+
+            <td><a href=/addwf target="_blank" > {{ Job.WF }}</a></td>
+
+            {%if Job.HostCount %}
+               <td><a href=/reports/{{ Job.Pid  }} target="_blank" > {{ Job.HostCount }}</a></td>
+            {%else%}
+                <td>{{ Job.HostCount }}</td>
+            {%endif%}
+
+
+            {%if Job.running_count%}
+                <td><a href=/reports/{{Job.Pid}}/Running target="_blank">{{Job.running_count}}</a></td>
+            {%else%}
+                <td>{{ Job.running_count}}</td>
+            {%endif%}
+
+            {%if Job.success_count%}
+                <td><a href=/reports/{{Job.Pid}}/Success target="_blank">{{Job.success_count}}</a></td>
+            {%else%}
+                <td>{{ Job.success_count}}</td>
+            {%endif%}
+
+            {%if Job.NonSuccess_count%}
+                <td><a href=/reports/{{Job.Pid}}/NotSuccess target="_blank">{{Job.NonSuccess_count}}</a></td>
+            {%else%}
+                <td>{{ Job.NonSuccess_count}}</td>
+            {%endif%}
+
+            {% if Job.InValidHosts %}
+                <td><a href=/reports/{{Job.Pid}}/InvalidHost target="_blank">{{Job.InValidHosts}}</a></td>
+            {%else%}
+                  <td>{{ Job.InValidHosts}}</td>
+            {%endif%}
+	{%endfor%}
+
+        </tr>
+		 </tbody>
+         </table>
+{%endif%}
+{%endblock%}

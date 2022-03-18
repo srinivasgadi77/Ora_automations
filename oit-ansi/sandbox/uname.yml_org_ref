@@ -1,0 +1,27 @@
+- hosts: all
+  gather_facts: false
+
+  tasks:
+
+  - name: uname
+    shell: uname -a;hostname
+    register: output
+
+  - name: Create a log file
+    file: 
+        path: "/tmp/ansi_{{ lookup('pipe', 'date +%Y%M%d%H%M%S') }}.log"
+        state: touch
+        owner: root
+        group: sys
+        mode: 0555
+    register: local_log_file
+    delegate_to: localhost
+ 
+  - debug:
+     msg: "log file : {{ local_log_file }}"
+
+  - local_action: lineinfile line={{ output.stdout_lines[0] }} path={{ local_log_file.dest }}
+
+  - debug:
+     msg: "{{ output.stdout_lines[-1].split('.')[0] }}"
+
